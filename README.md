@@ -1,4 +1,5 @@
-HIT THE GREEN BUTTON IN THE UPPER RIGHT
+HIT THE GREEN BUTTON 'CODE" IN THE UPPER RIGHT
+  
   SELECT - DOWNLOAD ZIP.
 
 Dependancy Mode lets you determine how you want the nodes to link when they are clicked.
