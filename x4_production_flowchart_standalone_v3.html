@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>X4: Foundations — Production Flowchart (Interactive)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    html, body { height: 100%; }
+    body { margin: 0; background: #f8fafc; }
+  </style>
+</head>
+<body>
+  <div id="root" class="min-h-screen"></div>
+
+  <script type="text/babel">
+    function X4Flowchart() {
+      const [zoom, setZoom] = React.useState(1);
+      const [pan, setPan] = React.useState({ x: 0, y: 0 });
+      const [isPanning, setIsPanning] = React.useState(false);
+      const panStart = React.useRef({ x: 0, y: 0 });
+      const pointerStart = React.useRef({ x: 0, y: 0 });
+
+      const onPanDown = (e) => {
+        e.preventDefault();
+        setIsPanning(true);
+        pointerStart.current = { x: e.clientX, y: e.clientY };
+        panStart.current = { ...pan };
+        e.currentTarget.setPointerCapture?.(e.pointerId);
+      };
+      const onPanMove = (e) => {
+        if (!isPanning) return;
+        const dx = e.clientX - pointerStart.current.x;
+        const dy = e.clientY - pointerStart.current.y;
+        setPan({ x: panStart.current.x + dx, y: panStart.current.y + dy });
+      };
+      const onPanUp = () => setIsPanning(false);
+      const resetView = () => { setZoom(1); setPan({ x: 0, y: 0 }); };
+
+      const [selected, setSelected] = React.useState(null);
+      const [depMode, setDepMode] = React.useState('up');
+      const [includeEC, setIncludeEC] = React.useState(true);
+
+      const scale = 1;
+      const row = (i) => 100 + i * 60 * scale;
+      const col = { raw: 120, t1: 520, t2: 920, t3: 1320, ter: 1720 };
+
+      const color = {
+        raw: { fill: '#f3f4f6', stroke: '#374151' },
+        t1: { fill: '#dbeafe', stroke: '#1e40af' },
+        t2: { fill: '#ede9fe', stroke: '#6d28d9' },
+        t3: { fill: '#ffedd5', stroke: '#c2410c' },
+        food: { fill: '#dcfce7', stroke: '#166534' },
+        illegal: { fill: '#fee2e2', stroke: '#991b1b' },
+        ter: { fill: '#e0f2fe', stroke: '#075985' },
+        hilite: { stroke: '#2563eb' },
+        hiliteEC: { stroke: '#0ea5e9' },
+        faded: { stroke: '#cbd5e1' },
+      };
+
+      const node = (id, label, x, y, tier, w = 170, h = 44) => ({ id, label, x, y, tier, w, h });
+
+      const nodes = [
+        node('sun', 'Sunlight', col.raw, row(0), 'raw'),
+        node('ore', 'Ore', col.raw, row(2), 'raw'),
+        node('silicon', 'Silicon', col.raw, row(3), 'raw'),
+        node('ice', 'Ice', col.raw, row(4), 'raw'),
+        node('hydrogen', 'Hydrogen', col.raw, row(5), 'raw'),
+        node('helium', 'Helium', col.raw, row(6), 'raw'),
+        node('methane', 'Methane', col.raw, row(7), 'raw'),
+        node('ec', 'Energy Cells', col.t1, row(0), 't1'),
+        node('water', 'Water', col.t1, row(4), 't1'),
+        node('rm', 'Refined Metals (CW)', col.t1, row(8), 't1', 200),
+        node('tela', 'Teladianium (Teladi)', col.t1, row(9), 't1', 200),
+        node('siw', 'Silicon Wafers', col.t1, row(10), 't1'),
+        node('graphene', 'Graphene', col.t1, row(11), 't1'),
+        node('sfc', 'Superfluid Coolant', col.t1, row(12), 't1', 200),
+        node('amc', 'Antimatter Cells', col.t1, row(13), 't1', 190),
+        node('chips', 'Microchips', col.t2, row(10), 't2'),
+        node('qt', 'Quantum Tubes', col.t2, row(11), 't2'),
+        node('ac', 'Advanced Composites', col.t2, row(9), 't2', 200),
+        node('sa', 'Scanning Arrays', col.t2, row(12), 't2'),
+        node('pc', 'Plasma Conductors', col.t2, row(13), 't2', 200),
+        node('wheat', 'Wheat', col.t2, row(2), 'food'),
+        node('meat', 'Meat', col.t2, row(3), 'food'),
+        node('spices', 'Spices', col.t2, row(5), 'food'),
+        node('sunrise', 'Sunrise Flowers', col.t2, row(6), 'food', 190),
+        node('soja', 'Soja Beans (Paranid)', col.t2, row(7), 'food', 210),
+        node('maja', 'Maja Snails (Paranid)', col.t2, row(8), 'food', 210),
+        node('swamp', 'Swamp Plant (Teladi)', col.t2, row(14), 'food', 210),
+        node('hp', 'Hull Parts', col.t3, row(9), 't3'),
+        node('ep', 'Engine Parts', col.t3, row(10), 't3'),
+        node('ae', 'Advanced Electronics', col.t3, row(11), 't3', 210),
+        node('fc', 'Field Coils', col.t3, row(12), 't3'),
+        node('sc', 'Shield Components', col.t3, row(13), 't3', 200),
+        node('wc', 'Weapon Components', col.t3, row(14), 't3', 210),
+        node('mc', 'Missile Components', col.t3, row(15), 't3', 210),
+        node('dc', 'Drone Components', col.t3, row(16), 't3', 200),
+        node('tc', 'Turret Components', col.t3, row(17), 't3', 210),
+        node('amconv', 'Antimatter Converters', col.t3, row(18), 't3', 220),
+        node('clay', 'Claytronics', col.t3, row(19), 't3'),
+        node('food', 'Food Rations (CW)', col.t3, row(2), 'food', 200),
+        node('med', 'Medical Supplies (CW)', col.t3, row(1), 'food', 220),
+        node('nostrop', 'Nostrop Oil (Teladi)', col.t3, row(4), 'food', 220),
+        node('sojahusk', 'Soja Husk (Paranid)', col.t3, row(5), 'food', 220),
+        node('spacefuel', 'Spacefuel (illegal)', col.t3, row(20), 'illegal', 210),
+        node('spaceweed', 'Spaceweed (illegal)', col.t3, row(21), 'illegal', 220),
+        node('majadust', 'Maja Dust (illegal)', col.t3, row(22), 'illegal', 210),
+        node('mm', 'Metallic Microlattice (TER)', col.ter, row(9), 'ter', 250),
+        node('cs', 'Computronic Substrate (TER)', col.ter, row(10), 'ter', 250),
+        node('sic', 'Silicon Carbide (TER)', col.ter, row(11), 'ter', 230),
+        node('pp', 'Protein Paste (TER)', col.ter, row(2), 'ter', 210),
+        node('tmre', 'Terran MRE', col.ter, row(3), 'ter'),
+        node('tmed', 'Terran Medical Supplies', col.ter, row(4), 'ter', 230),
+      ];
+
+      const N = Object.fromEntries(nodes.map(n => [n.id, n]));
+      const A = (from, to, opts = {}) => ({ from, to, ...opts });
+
+      const arrows = [
+        A('sun', 'ec'),
+        A('ice', 'water'),
+        A('ore', 'rm'),
+        A('ore', 'tela'),
+        A('silicon', 'siw'),
+        A('methane', 'graphene'),
+        A('helium', 'sfc'),
+        A('hydrogen', 'amc'),
+        A('water', 'wheat'), A('water', 'meat'), A('water', 'spices'),
+        A('water', 'sunrise'), A('water', 'soja'), A('water', 'maja'), A('water', 'swamp'),
+        A('siw', 'chips'), A('siw', 'qt'), A('siw', 'sa'),
+        A('graphene', 'qt'), A('graphene', 'ac'),
+        A('sfc', 'pc'),
+        A('rm', 'hp'), A('graphene', 'hp'), A('tela', 'hp'),
+        A('rm', 'ep'), A('amc', 'ep'),
+        A('qt', 'fc'), A('pc', 'fc'),
+        A('qt', 'sc'), A('pc', 'sc'),
+        A('chips', 'ae'), A('qt', 'ae'),
+        A('hp', 'wc'), A('pc', 'wc'),
+        A('ac', 'mc'), A('hp', 'mc'),
+        A('sa', 'tc'), A('ep', 'tc'),
+        A('chips', 'dc'), A('sa', 'dc'),
+        A('chips', 'amconv'), A('ac', 'amconv'),
+        A('amc', 'clay'), A('qt', 'clay'), A('chips', 'clay'),
+        A('wheat', 'food'), A('meat', 'food'), A('spices', 'food'),
+        A('water', 'med'), A('wheat', 'med'), A('spices', 'med'),
+        A('sunrise', 'nostrop'), A('spices', 'nostrop'), A('water', 'nostrop'),
+        A('soja', 'sojahusk'), A('maja', 'sojahusk'), A('spices', 'sojahusk'),
+        A('wheat', 'spacefuel'), A('water', 'spacefuel'),
+        A('swamp', 'spaceweed'), A('spices', 'spaceweed'),
+        A('maja', 'majadust'), A('spices', 'majadust'),
+        A('ore', 'mm'), A('helium', 'mm'),
+        A('ore', 'cs'), A('silicon', 'cs'), A('hydrogen', 'cs'),
+        A('mm', 'sic'), A('silicon', 'sic'), A('methane', 'sic'),
+        A('ice', 'pp'), A('methane', 'pp'),
+        A('pp', 'tmre'), A('pp', 'tmed'), A('water', 'tmed'),
+      ];
+
+      const ecTargets = [
+        'water','rm','tela','siw','graphene','sfc','amc',
+        'chips','qt','ac','sa','pc','hp','ep','ae','fc','sc','wc','mc','dc','tc','amconv','clay',
+        'food','med','nostrop','sojahusk','spacefuel','spaceweed','majadust','mm','cs','sic','pp','tmre','tmed'
+      ];
+      const ecArrows = ecTargets.map(t => A('ec', t, { ec: true }));
+      const allArrows = [...arrows, ...ecArrows];
+
+      const parents = React.useMemo(() => {
+        const m = {}; allArrows.forEach(e => { (m[e.to] ||= []).push(e.from); }); return m;
+      }, [allArrows]);
+      const children = React.useMemo(() => {
+        const m = {}; allArrows.forEach(e => { (m[e.from] ||= []).push(e.to); }); return m;
+      }, [allArrows]);
+
+      const walk = (startIds, map) => {
+        const seen = new Set(startIds); const q = [...startIds];
+        while (q.length) { const v = q.shift(); for (const nxt of map[v] || []) { if (!seen.has(nxt)) { seen.add(nxt); q.push(nxt); } } }
+        return seen;
+      };
+
+      const highlightNodes = React.useMemo(() => {
+        if (!selected) return new Set();
+        const ups = (depMode === 'up' || depMode === 'both') ? walk([selected], parents) : new Set([selected]);
+        const downs = (depMode === 'down' || depMode === 'both') ? walk([selected], children) : new Set([selected]);
+        const out = new Set([selected]); ups.forEach(n => out.add(n)); downs.forEach(n => out.add(n)); return out;
+      }, [selected, depMode, parents, children]);
+
+      const highlightArrows = React.useMemo(() => {
+        if (!selected) return new Set();
+        const set = new Set();
+        for (const e of allArrows) { if (!includeEC && e.ec) continue; if (highlightNodes.has(e.from) && highlightNodes.has(e.to)) set.add(e); }
+        return set;
+      }, [selected, highlightNodes, allArrows, includeEC]);
+
+      const renderNode = (n) => {
+        const palette = color[n.tier] || color.t2;
+        const isSel = selected === n.id;
+        const isHi = highlightNodes.has(n.id);
+        const opacity = selected ? (isHi ? 1 : 0.2) : 1;
+        const stroke = isSel ? color.hilite.stroke : palette.stroke;
+        const strokeWidth = isSel ? 3 : 2;
+        return (
+          <g key={n.id} transform={`translate(${n.x}, ${n.y})`} style={{ cursor: 'pointer', opacity }}
+             onClick={(e) => { e.stopPropagation(); setSelected(n.id); }}>
+            <rect x={0} y={0} rx={12} ry={12} width={n.w} height={n.h}
+                  fill={palette.fill} stroke={stroke} strokeWidth={strokeWidth} />
+            <text x={n.w / 2} y={n.h / 2 + 4} textAnchor="middle" fontSize={12} fill="#111827" className="select-none">{n.label}</text>
+          </g>
+        );
+      };
+
+      const renderArrow = (e, i) => {
+        const s = N[e.from]; const t = N[e.to]; if (!s || !t) return null; if (!includeEC && e.ec) return null;
+        const x1 = s.x + s.w, y1 = s.y + s.h / 2, x2 = t.x, y2 = t.y + t.h / 2;
+        const midX = (x1 + x2) / 2, dy = (y2 - y1) / 2;
+        const c1x = midX, c1y = y1 + dy, c2x = midX, c2y = y2 - dy;
+        const isHi = selected ? highlightArrows.has(e) : true;
+        const baseStroke = e.ec ? color.hiliteEC.stroke : color.hilite.stroke;
+        const stroke = isHi ? baseStroke : color.faded.stroke;
+        const width = isHi ? (e.ec ? 1.6 : 2.2) : 1.2;
+        const dash = e.ec ? '4 4' : '';
+        const opacity = selected ? (isHi ? 0.95 : 0.2) : 0.8;
+        return (<path key={i} d={`M ${x1} ${y1} C ${c1x} ${c1y}, ${c2x} ${c2y}, ${x2} ${y2}`} fill="none" stroke={stroke} strokeWidth={width} strokeDasharray={dash} markerEnd="url(#arrow)" style={{ opacity }} />);
+      };
+
+      const clearSelection = () => setSelected(null);
+
+      return (
+        <div className="w-full min-h-screen p-4 flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <div className="text-xl font-semibold">X4: Foundations — Complete Production Flowchart</div>
+            <div className="flex items-center gap-2 text-sm">
+              <span className="text-gray-600">Zoom</span>
+              <input type="range" min="0.6" max="1.8" step="0.05" value={zoom} onChange={(e)=>setZoom(parseFloat(e.target.value))} />
+              <button className="px-2 py-1 border rounded text-gray-700" onClick={resetView}>Reset</button>
+              <span className="tabular-nums text-gray-700">{Math.round(zoom*100)}%</span>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-4 text-xs text-gray-700">
+            <div className="flex items-center gap-2">
+              <span className="font-medium">Dependency mode:</span>
+              <label className="flex items-center gap-1"><input type="radio" name="dm" checked={depMode==='up'} onChange={()=>setDepMode('up')} /> Upstream</label>
+              <label className="flex items-center gap-1"><input type="radio" name="dm" checked={depMode==='down'} onChange={()=>setDepMode('down')} /> Downstream</label>
+              <label className="flex items-center gap-1"><input type="radio" name="dm" checked={depMode==='both'} onChange={()=>setDepMode('both')} /> Both</label>
+            </div>
+            <label className="flex items-center gap-2"><input type="checkbox" checked={includeEC} onChange={(e)=>setIncludeEC(e.target.checked)} /> Include EC links</label>
+            {selected && <button className="px-2 py-1 border rounded" onClick={clearSelection}>Clear selection</button>}
+            <span className="text-gray-500">Tip: Click a node to highlight dependencies. Drag to pan. Double‑click empty space to clear.</span>
+          </div>
+
+          <div className="relative w-full overflow-hidden rounded-2xl shadow border border-gray-200 bg-white">
+            <svg width={2100} height={1200} onDoubleClick={clearSelection}>
+              <rect x="0" y="0" width="2100" height="1200" fill="transparent" style={{ cursor: isPanning ? 'grabbing' : 'grab' }}
+                onPointerDown={onPanDown} onPointerMove={onPanMove} onPointerUp={onPanUp} onPointerLeave={onPanUp}
+              />
+              <defs>
+                <marker id="arrow" markerWidth="10" markerHeight="10" refX="10" refY="3" orient="auto" markerUnits="strokeWidth">
+                  <path d="M 0 0 L 10 3 L 0 6 z" fill="#6b7280" />
+                </marker>
+              </defs>
+              <g transform={`translate(${pan.x}, ${pan.y}) scale(${zoom})`}>
+                <g>
+                  <rect x={40} y={12} width={2020} height={56} rx={14} fill="#111827" opacity="0.95" />
+                  <text x={1050} y={48} textAnchor="middle" fontSize={26} fontWeight={700} fill="#ffffff">
+                    X4: Foundations - Production Flowchart (Interactive)
+                  </text>
+                </g>
+                <text x={col.raw} y={86} fontSize={14} fontWeight={600}>RAW</text>
+                <text x={col.t1} y={86} fontSize={14} fontWeight={600}>TIER‑1</text>
+                <text x={col.t2} y={86} fontSize={14} fontWeight={600}>TIER‑2</text>
+                <text x={col.t3} y={86} fontSize={14} fontWeight={600}>TIER‑3 / OUTPUTS</text>
+                <text x={col.ter} y={86} fontSize={14} fontWeight={600}>TERRAN</text>
+                {allArrows.map((e, i) => renderArrow(e, i))}
+                {nodes.map(renderNode)}
+                <text x={col.t3} y={1160} fontSize={12} fill="#374151">Station construction requires: Hull Parts + Claytronics</text>
+              </g>
+            </svg>
+          </div>
+
+          <div className="text-xs text-gray-500">Includes illegal wares and faction food variants (Teladi/Paranid). Terran chains per Cradle of Humanity. EC inputs shown as dashed lines; toggle them in the toolbar.</div>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<X4Flowchart />);
+  </script>
+</body>
+</html>
